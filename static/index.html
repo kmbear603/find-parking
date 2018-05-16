@@ -17,8 +17,8 @@
                         </div>
 
                         <div class="form-check form-check-inline">
-                                <input type="radio" name="location-radio" id="specific-location" class="form-check-input" value="specific">
-                                <input class="form-check-label" id="input-location" type="text" placeholder="新城市廣場" />
+                            <input type="radio" name="location-radio" id="specific-location" class="form-check-input" value="specific">
+                            <input class="form-check-label" id="input-location" type="text" placeholder="新城市廣場" value="Megabox" />
                         </div>
 
                         <button id="search-button" class="btn btn-primary" onclick="javascript:onClickSearchButton()" disabled>SEARCH</button>
@@ -26,16 +26,20 @@
                 </div>
             </div>
 
+            <br/>
+
             <div class="row">
                 <div class="col-12">
-                    <div id="map" style="width: 100%; height: 400px" />
+                    <div id="map" style="width: 100%; height: 400px"></div>
                 </div>
             </div>
 
+            <br/>
+
             <div class="row">
-                <div class="col">
+                <div class="col-12">
                     <div align="center">
-                        <div id="result-tbody"/>
+                        <div id="result-tbody"></div>
                     </div>
                 </div>
             </div>
@@ -196,7 +200,12 @@
             function addMarker(location, title){
                 var marker = new google.maps.Marker({
                     position: { lat: location.latitude, lng: location.longitude },
-                    title: title,
+                    label: {
+                        text: title,
+                        color: '#003300',
+                        fontSize: "12px",
+                        fontWeight: "bold"
+                    },
                     animation: google.maps.Animation.DROP,
                 });
                 marker.setMap(GOOGLE_MAP);
