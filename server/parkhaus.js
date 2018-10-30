@@ -259,6 +259,14 @@ function Parkhaus(){
                 else
                     return reject("unknown format of car park page " + urlOfCarParkPage);
 
+                // remove all script tags
+                for (var key in obj.content){
+                    var html = obj.content[key];
+                    var dom = $(html);
+                    dom.find("script").remove();
+                    obj.content[key] = dom.html().trim();
+                }
+
                 resolve(obj);
             })
             .catch(err => {
