@@ -3,6 +3,7 @@
 const fs = require('fs');
 const request = require("superagent")
 const cheerio = require("cheerio");
+const levenshtein = require("./levenshtein.js");
 
 const CACHE_FILE = "parkhaus-cache.json"
 const HOSTNAME = "http://www.parkhaus.hk";
@@ -36,6 +37,7 @@ function deg2rad(deg) {
 
 function Parkhaus(){
     var CACHE = null;
+    var CACAHE_TIME = null;
 
     const reset = () => new Promise((resolve, reject) => {
         CACHE = null;
@@ -43,6 +45,20 @@ function Parkhaus(){
             fs.unlinkSync(CACHE_FILE);
         resolve();
     });
+
+    const isCacheExpired = () => {
+        if (!fs.existsSync(CACHE_FILE)){
+            return true;
+        }
+
+        var stats = fs.statSync(CACHE_FILE);
+        var mtime = stats.mtime;
+
+        var now = new Date();
+
+        var diff = now - mtime;
+        return diff > 24 * 60 * 60 * 1000;  // one day
+    };
 
     const loadFromCache = () => {
         if (fs.existsSync(CACHE_FILE))
@@ -101,7 +117,7 @@ function Parkhaus(){
         if (CACHE == null)
             loadFromCache();
 
-        if (CACHE != null)
+        if (CACHE != null && !isCacheExpired())
             return resolve(CACHE);
 
         const buffer = [];
@@ -209,15 +225,30 @@ function Parkhaus(){
                 if ($(".asl_nores").length > 0)
                     return reject("car park " + carParkName + " is not found");
 
-                var pageUrl = [];
+                var results = [];
                 $("a").each((i, e) => {
-                    pageUrl.push($(e).attr("href"));
+                    var resultTitle = $(e).text().trim();
+                    var resultUrl = $(e).attr("href");
+                    results.push({
+                        title: resultTitle,
+                        url: resultUrl
+                    });
                 });
 
-                if (pageUrl.length == 0)
+                if (results.length == 0)
                     return reject("cant find detail url for " + carParkName);
 
-                resolve(pageUrl);
+                // multiple result
+                if (results.length > 1){
+                    // sort by distance
+                    results.sort((r1, r2) => {
+                        var d1 = levenshtein.getEditDistance(r1.title, carParkName);
+                        var d2 = levenshtein.getEditDistance(r2.title, carParkName);
+                        return Math.abs(d1) - Math.abs(d2);
+                    });
+                }
+
+                resolve(results.map(r => r.url));
             })
             .catch(err => {
                 reject("failed in /wp-admin/admin-ajax.php");
