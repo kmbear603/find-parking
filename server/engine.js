@@ -2,8 +2,8 @@ const ParkHaus = require("./parkhaus.js")
 
 const parkhaus = new ParkHaus();
 
-function getCarParksInRange(latitude, longitude, distance){
-    return parkhaus.getCarParksInRange(latitude, longitude, distance);
+function getCarParksInRange(latitude, longitude, distance, count){
+    return parkhaus.getCarParksInRange(latitude, longitude, distance, count);
 }
 
 function getCarParkDetail(carParkName){

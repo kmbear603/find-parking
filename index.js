@@ -17,7 +17,8 @@ app.get('/api/carparks', (req, res) => {
     const latitude = req.query.lat ? parseFloat(req.query.lat) : null;
     const longitude = req.query.lon ? parseFloat(req.query.lon) : null;
     const distance = req.query.dist ? parseFloat(req.query.dist) : null;
-    Engine.getCarParksInRange(latitude, longitude, distance)
+    const maxCount = req.query.count ? parseFloat(req.query.count) : null;
+    Engine.getCarParksInRange(latitude, longitude, distance, maxCount)
         .then(data => {
             res.json(data)
         })

@@ -73,14 +73,15 @@ function Parkhaus(){
         fs.writeFileSync(CACHE_FILE, saveJson(CACHE));
     };
 
-    const getCarParksInRange = (latitude, longitude, distanceInKm) => new Promise((resolve, reject) => {
+    const getCarParksInRange = (latitude, longitude, distanceInKm, maxCount) => new Promise((resolve, reject) => {
         latitude = latitude ? latitude : 22.28552;
         longitude = longitude ? longitude : 114.15769;
         distanceInKm = distanceInKm ? distanceInKm : 100;
+        maxCount = maxCount ? maxCount : 30;
 
         getAllCarParkLocations()
             .then(carparks => {
-                const list = [];
+                var list = [];
 
                 carparks.forEach(carpark => {
                     try {
@@ -105,6 +106,10 @@ function Parkhaus(){
                 });
 
                 list.sort((c1, c2) => c1.distance - c2.distance);
+
+                if (maxCount < list.length){
+                    list = list.slice(0, maxCount);
+                }
 
                 resolve(list);
             })
