@@ -196,10 +196,11 @@ function Parkhaus(){
         request.post(url)
             .timeout(TIMEOUT)
             .send({
-                action: "ajaxsearchlite_search",
-                aslp: carParkName,
+                action: "ajaxsearchpro_search",
+                aspp: carParkName,
                 asid: 1,
-                options: "qtranslate_lang=0&set_intitle=None&set_incontent=None&set_inexcerpt=None&set_inposts=None&set_inpages=None)"
+                asp_inst_id: "1_1",
+                options: "current_page_id=15741&qtranslate_lang=0&filters_changed=0&filters_initial=1&asp_gen%5B%5D=title&asp_gen%5B%5D=content&asp_gen%5B%5D=excerpt&customset%5B%5D=post&customset%5B%5D=page"
             })
             .type("form")
             .then(res => {
@@ -235,6 +236,8 @@ function Parkhaus(){
                     updateTime: $(".post-meta").text().replace("最後更新時間:", "").trim(),
                     content: {},
                 };
+
+                $("script").remove();   // remove all scripts
 
                 const containerDiv = $(".responsive-tabs");
                 const entryContentDiv = $(".entry-content");
