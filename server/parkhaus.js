@@ -122,8 +122,16 @@ function Parkhaus(){
         if (CACHE == null)
             loadFromCache();
 
-        if (CACHE != null && !isCacheExpired())
-            return resolve(CACHE);
+        if (CACHE != null){
+            resolve(CACHE);
+
+            if (!isCacheExpired()){
+                return;
+            }
+            else {
+                // move on to rebuild cache
+            }
+        }
 
         const buffer = [];
 
