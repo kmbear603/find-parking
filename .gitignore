@@ -3,6 +3,7 @@
 # web_server
 node_modules/
 package-lock.json
+parkhaus-cache.json
 
 # scraper
 __pycache__/
