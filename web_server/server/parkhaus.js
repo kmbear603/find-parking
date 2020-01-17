@@ -49,7 +49,7 @@ function Parkhaus(){
         if (fs.existsSync(CACHE_FILE))
             CACHE = loadJson(fs.readFileSync(CACHE_FILE));
         else
-            CACHE = null;
+            CACHE = [];
     };
 
     const saveToCache = () => {
