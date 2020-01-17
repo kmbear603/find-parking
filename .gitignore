@@ -10,3 +10,4 @@ __pycache__/
 config.json
 *.html
 dump-all.json
+error.log
