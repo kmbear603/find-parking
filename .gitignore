@@ -1,14 +1,14 @@
 .vscode/
 
 # web_server
-node_modules/
-package-lock.json
-parkhaus-cache.json
+web_server/node_modules/
+web_server/package-lock.json
+web_server/parkhaus-cache.json
 
 # scraper
-__pycache__/
-*.pyc
-config.json
-*.html
-dump-all.json
-error.log
+scraper/__pycache__/
+scraper/*.pyc
+scraper/config.json
+scraper/*.html
+scraper/dump-all.json
+scraper/error.log
