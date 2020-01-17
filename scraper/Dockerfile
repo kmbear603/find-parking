@@ -1,5 +1,5 @@
 FROM python:3
-ADD ./scraper/Main.py /
+ADD Main.py /
 RUN pip install pytz
 RUN pip install mailer
 RUN pip install pyquery
