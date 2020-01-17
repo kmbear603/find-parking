@@ -1,2 +1,12 @@
+.vscode/
+
+# web_server
 node_modules/
 package-lock.json
+
+# scraper
+__pycache__/
+*.pyc
+config.json
+*.html
+dump-all.json

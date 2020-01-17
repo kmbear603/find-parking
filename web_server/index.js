@@ -1,7 +1,10 @@
 const fs = require("fs")
 const express = require('express')
 const app = express()
+const bodyParser = require('body-parser');
 const Engine = require("./server/engine.js")
+
+app.use(bodyParser.json());
 
 app.get("/test", (req, res) => {
     Engine.test()
@@ -18,7 +21,8 @@ app.get('/api/carparks', (req, res) => {
     const longitude = req.query.lon ? parseFloat(req.query.lon) : null;
     const distance = req.query.dist ? parseFloat(req.query.dist) : null;
     const maxCount = req.query.count ? parseFloat(req.query.count) : null;
-    Engine.getCarParksInRange(latitude, longitude, distance, maxCount)
+    const cacheTimeOnly = req.query.cacheTimeOnly || false;
+    Engine.getCarParksInRange(latitude, longitude, distance, maxCount, cacheTimeOnly)
         .then(data => {
             res.json(data)
         })
@@ -27,8 +31,28 @@ app.get('/api/carparks', (req, res) => {
         });
 });
 
+app.delete("/api/carpark/:name", (req, res) => {
+    Engine.deleteCarParkDetail(req.params.name)
+        .then(data => {
+            res.status(200).send("OK");
+        })
+        .catch(err => {
+            res.status(500).send(err);
+        });
+});
+
 app.get("/api/carpark/:name", (req, res) => {
     Engine.getCarParkDetail(req.params.name)
+        .then(data => {
+            res.json(data);
+        })
+        .catch(err => {
+            res.status(500).send(err);
+        });
+});
+
+app.post("/api/carpark/", (req, res) => {
+    Engine.setCarParkDetail(req.body)
         .then(data => {
             res.json(data);
         })

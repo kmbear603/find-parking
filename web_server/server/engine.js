@@ -2,12 +2,20 @@ const ParkHaus = require("./parkhaus.js")
 
 const parkhaus = new ParkHaus();
 
-function getCarParksInRange(latitude, longitude, distance, count){
-    return parkhaus.getCarParksInRange(latitude, longitude, distance, count);
+function getCarParksInRange(latitude, longitude, distance, count, cacheTimeOnly){
+    return parkhaus.getCarParksInRange(latitude, longitude, distance, count, cacheTimeOnly);
 }
 
 function getCarParkDetail(carParkName){
     return parkhaus.getCarParkDetail(carParkName);
+}
+
+function setCarParkDetail(data){
+    return parkhaus.setCarParkDetail(data);
+}
+
+function deleteCarParkDetail(carParkName){
+    return parkhaus.deleteCarParkDetail(carParkName);
 }
 
 function reset(){
@@ -46,5 +54,7 @@ module.exports = {
     test: test,
     reset: reset,
     getCarParkDetail: getCarParkDetail,
+    setCarParkDetail: setCarParkDetail,
+    deleteCarParkDetail: deleteCarParkDetail,
     getCarParksInRange: getCarParksInRange
 }

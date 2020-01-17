@@ -5,10 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "scraper",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scraper/Main.py",
+            "cwd": "${workspaceFolder}/scraper",
+            "console":"integratedTerminal"
+        },
+        {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
-            "program": "${workspaceFolder}\\index.js"
+            "name": "web_server",
+            "program": "${workspaceFolder}/web_server/index.js",
+            "cwd": "${workspaceFolder}/web_server",
         }
     ]
 }
