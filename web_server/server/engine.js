@@ -1,6 +1,10 @@
 const ParkHaus = require("./parkhaus.js")
+const CarparkDB = require("./carparkDB.js");
 
-const parkhaus = new ParkHaus();
+const carparkDB = new CarparkDB();
+carparkDB.init();
+
+const parkhaus = new ParkHaus(carparkDB);
 
 function getCarParksInRange(latitude, longitude, distance, count, cacheTimeOnly){
     return parkhaus.getCarParksInRange(latitude, longitude, distance, count, cacheTimeOnly);

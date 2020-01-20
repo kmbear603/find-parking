@@ -35,7 +35,7 @@ function deg2rad(deg) {
     return deg * (Math.PI/180)
 }
 
-function Parkhaus(){
+function Parkhaus(carparkDB){
     var CACHE = null;
 
     const reset = () => new Promise((resolve, reject) => {
@@ -45,14 +45,32 @@ function Parkhaus(){
         resolve();
     });
 
-    const loadFromCache = () => {
+    const initCache = () => new Promise((resolve, reject) => {
+        if (CACHE == null){
+            //loadFromCacheFile();
+        }
+
+        if (CACHE == null){
+            pullAllFromDB()
+                .then(() => {
+                    saveToCacheFile();
+                    resolve();
+                })
+                .catch(err => reject(err));
+            return;
+        }
+
+        resolve();
+    });
+
+    const loadFromCacheFile = () => {
         if (fs.existsSync(CACHE_FILE))
             CACHE = loadJson(fs.readFileSync(CACHE_FILE));
         else
-            CACHE = [];
+            CACHE = null;
     };
 
-    const saveToCache = () => {
+    const saveToCacheFile = () => {
         if (fs.existsSync(CACHE_FILE))
             fs.unlinkSync(CACHE_FILE);
         fs.writeFileSync(CACHE_FILE, saveJson(CACHE));
@@ -112,17 +130,20 @@ function Parkhaus(){
             });
     });
 
-    const getAllCarParkLocations = () => new Promise((resolve, reject) => {
-        if (CACHE == null){
-            loadFromCache();
-        }
+    const pullAllFromDB = () => new Promise((resolve, reject) => {
+        carparkDB.getAll()
+            .then(allCPs => {
+                CACHE = [];
+                allCPs.forEach(cp => CACHE.push(cp));
+                resolve();
+            })
+            .catch (err => reject(err));
+    });
 
-        if (CACHE != null){
-            resolve(CACHE);
-        }
-        else {
-            reject("cache is not ready");
-        }
+    const getAllCarParkLocations = () => new Promise((resolve, reject) => {
+        initCache()
+            .then(() => resolve(CACHE))
+            .catch(err => reject(err));
     });
 
     const getCarParkDetailFromUrl = urlOfCarParkPage => new Promise((resolve, reject) => {
@@ -179,30 +200,31 @@ function Parkhaus(){
     });
 
     const getCarParkDetail = carParkName => new Promise((resolve, reject) => {
-        const detail = lookupCarparkDetail(carParkName);
-        if (!detail){
-            return reject(carParkName + " is not found");
-        }
-
-        resolve([ detail ]);
+        lookupCarparkDetail(carParkName)
+            .then(detail => {
+                if (!detail){
+                    return reject(carParkName + " is not found");
+                }
+        
+                resolve([ detail ]);
+            })
+            .catch(err => reject(err));
     });
 
-    const lookupCarparkDetail = name => {
-        if (CACHE == null){
-            loadFromCache();
-        }
-
-        CACHE = CACHE || [];
-
-        for (var i = 0; i < CACHE.length; i++){
-            const cache = CACHE[i];
-            if (cache["name"] == name){
-                return cache;
-            }
-        }
-
-        return null;
-    };
+    const lookupCarparkDetail = name => new Promise((resolve, reject) => {
+        initCache()
+            .then(() => {
+                for (var i = 0; i < CACHE.length; i++){
+                    const cache = CACHE[i];
+                    if (cache["name"] == name){
+                        return resolve(cache);
+                    }
+                }
+        
+                resolve(null);
+            })
+            .catch(err => reject(err))
+    });
 
     const setCarParkDetail = detail => new Promise((resolve, reject) => {
         const name = detail["name"];
@@ -228,40 +250,50 @@ function Parkhaus(){
 
         const lastUpdate = detail["lastUpdate"] || "N/A";
 
-        var saveDetail = lookupCarparkDetail(name)
-        if (!saveDetail){
-            saveDetail = {
-                "name": name
-            }
-            CACHE.push(saveDetail)
-        }
+        lookupCarparkDetail(name)
+            .then(saveDetail => {
+                if (!saveDetail){
+                    saveDetail = {
+                        "name": name
+                    }
+                    CACHE.push(saveDetail)
+                }
+        
+                saveDetail["type"] = "停車場";  // for compatibility
+                saveDetail["area"] = detail["area"];
+                saveDetail["district"] = detail["district"];
+                saveDetail["url"] = url;
+                saveDetail["location"] = location;
+                saveDetail["content"] = saveContent;
+                saveDetail["updateTime"] = lastUpdate;
+                saveDetail["cacheTime"] = new Date().getTime();
+        
+                carparkDB.update(saveDetail)
+                    .then(saveDetail => {
+                        saveToCacheFile()
 
-        saveDetail["type"] = "停車場";  // for compatibility
-        saveDetail["area"] = detail["area"];
-        saveDetail["district"] = detail["district"];
-        saveDetail["url"] = url;
-        saveDetail["location"] = location;
-        saveDetail["content"] = saveContent;
-        saveDetail["updateTime"] = lastUpdate;
-        saveDetail["cacheTime"] = new Date().getTime();
-
-        saveToCache()
-
-        resolve(saveDetail);
+                        resolve(saveDetail);
+                    });
+            })
+            .catch(err => reject(err));
     });
 
     const deleteCarParkDetail = carParkName => new Promise((resolve, reject) => {
-        if (CACHE){
-            for (var i = 0; i < CACHE.length; i++){
-                const cache = CACHE[i];
-                if (cache["name"] == carParkName){
-                    CACHE.splice(i, 1);
-                    saveToCache();
-                    break;
+        initCache()
+            .then(() => {
+                if (CACHE){
+                    for (var i = 0; i < CACHE.length; i++){
+                        const cache = CACHE[i];
+                        if (cache["name"] == carParkName){
+                            CACHE.splice(i, 1);
+                            saveToCacheFile();
+                            break;
+                        }
+                    }
                 }
-            }
-        }
-        resolve(true);
+                resolve(true);
+            })
+            .catch(err => reject(err));
     });
 
     return {

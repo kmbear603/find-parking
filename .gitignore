@@ -4,6 +4,7 @@
 web_server/node_modules/
 web_server/package-lock.json
 web_server/parkhaus-cache.json
+web_server/ServiceAccountKey.json
 
 # scraper
 scraper/__pycache__/
