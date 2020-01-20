@@ -1,14 +1,12 @@
 const admin = require('firebase-admin');
 
-let serviceAccount = require('../ServiceAccountKey.json');
-
 function CarparkDB(){
     var DB = null;
     const COLLECTION = "carparks";
 
-    const init = () => {
+    const init = (serviceAccountJson) => {
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
+            credential: admin.credential.cert(serviceAccountJson)
         });
 
         DB = admin.firestore();

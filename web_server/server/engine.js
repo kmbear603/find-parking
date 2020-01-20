@@ -1,9 +1,24 @@
 const ParkHaus = require("./parkhaus.js")
 const CarparkDB = require("./carparkDB.js");
 
-const carparkDB = new CarparkDB();
-carparkDB.init();
+function createCarparkDB(){
+    var carparkDB = new CarparkDB();
+    var serviceAccountKeyJson = null;
+    if (process.env.SERVICE_ACCOUNT_KEY){
+        // the content of ServiceAccountKey.json
+        // it is set as a config var on heroku
+        serviceAccountKeyJson = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+    }
+    else {
+        // read from file
+        var fs = require("fs");
+        serviceAccountKeyJson = JSON.parse(fs.readFileSync("./ServiceAccountKey.json", "utf8"));
+    }
+    carparkDB.init(serviceAccountKeyJson);
+    return carparkDB;
+}
 
+const carparkDB = createCarparkDB();
 const parkhaus = new ParkHaus(carparkDB);
 
 function getCarParksInRange(latitude, longitude, distance, count, cacheTimeOnly){

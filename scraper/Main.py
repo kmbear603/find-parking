@@ -204,7 +204,7 @@ def get_carparks(district):
     return ret
 
 def throttle():
-    seconds = random.randint(2, 8)
+    seconds = random.randint(0, 5)
     time.sleep(seconds)
 
 def get_carpark_detail(carpark):
