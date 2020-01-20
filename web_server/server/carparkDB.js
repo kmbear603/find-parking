@@ -59,7 +59,9 @@ function CarparkDB(){
 
             const docRef = DB.collection(COLLECTION).doc(name);
             docRef.set(detail)
-                .then(() => resolve(detail))
+                .then(() => {
+                    resolve(detail);
+                })
                 .catch(err => reject(err));
         }
         catch (err){
@@ -69,8 +71,10 @@ function CarparkDB(){
 
     const remove = name => new Promise((resolve, reject) => {
         try {
-            DB.collection(COLLECTION).doc(name).delete()
-            resolve();
+            DB.collection(COLLECTION).doc(name)
+                .delete()
+                .then(() => resolve())
+                .catch(err => reject(err));
         }
         catch (err){
             reject(err);

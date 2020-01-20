@@ -61,6 +61,8 @@ def http_get_text(url):
 
 def http_get_dom(url):
     html = http_get_text(url)
+    with open("dump.html", "w", encoding="utf-8") as f:
+        f.write(html)
     dom = pyquery.PyQuery(html)
     return dom
 
@@ -155,30 +157,49 @@ def get_districts(area):
 
         for div in divs:
             anchor = dom("a", div)
+
             districts.append({
                 "area": area["name"],
                 "name": anchor.text(),
                 "url": anchor.attr("href")
             })
-
     
     return districts
 
 def get_carparks(district):
     ret = []
 
-    dom = http_get_dom(district["url"])
+    page = 1
+    total_page = 0
 
-    divs = dom("div[data-pid]")
+    while page == 1 or page <= total_page:
+        if page > 1:
+            url = district["url"] + "?_page=" + str(page)
+        else:
+            url = district["url"]
+        dom = http_get_dom(url)
 
-    for div in divs:
-        anchor = dom("a", div)
-        ret.append({
-            "area": district["area"],
-            "district": district["name"],
-            "name": anchor.text(),
-            "url": anchor.attr("href")
-        })
+        if page == 1:
+            # get total number of pages
+            pagination_uls = dom("ul.pt-cv-pagination")
+            for pagination_ul in pagination_uls:
+                total_pages_str = dom(pagination_ul).attr("data-totalpages")
+                if total_pages_str:
+                    total_page = int(total_pages_str)
+                    break
+
+        divs = dom("div[data-pid]")
+
+        for div in divs:
+            anchor = dom("a", div)
+            ret.append({
+                "area": district["area"],
+                "district": district["name"],
+                "name": anchor.text(),
+                "url": anchor.attr("href")
+            })
+        
+        page += 1
 
     return ret
 
@@ -238,6 +259,8 @@ def get_carpark_detail(carpark):
 
             for i in range(len(tab_titles)):
                 title = tab_titles[i]
+                if len(title) == 0:
+                    title = "DATA" + str(i)
                 content = tab_contents[i]
 
                 contents.append({
@@ -262,6 +285,8 @@ def get_carpark_detail(carpark):
 
             for i in range(len(tab_titles)):
                 title = tab_titles[i]
+                if len(title) == 0:
+                    title = "DATA" + str(i)
                 content = tab_contents[i]
 
                 contents.append({
