@@ -384,47 +384,55 @@ def log_error(msg, e):
         f.write("\n")
         f.close()
 
+def print_file(msg):
+    with open("debug.txt", "a+", encoding="utf-8") as f:
+        f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        f.write(" ")
+        f.write(msg)
+        f.write("\n")
+        f.close()
+
 def run():
     details = []
     finishedCarparkNames = {}
 
-    print("starting")
+    print_file("starting")
     cache_time_endpoint_url = get_download_cache_time_endpoint_url("config.json")
     endpoint_url = get_upload_endpoint_url("config.json")
     delete_endpoint_url = get_delete_endpoint_url("config.json")
 
-    print("getting cache status")
+    print_file("getting cache status")
     try:
         cache_times = get_all_cache_times_from_FindParking(cache_time_endpoint_url)
     except Exception as e:
-        print(e)
+        print_file(e)
         log_error("get_all_cache_times_from_FindParking", e)
         return
 
-    print("getting areas from parkhaus")
+    print_file("getting areas from parkhaus")
     try:
         areas = get_areas()
     except Exception as e:
-        print(e)
+        print_file(e)
         log_error("get_areas", e)
         return
 
     if len(areas) == 0:
-        print("no area can be found from parkhaus")
+        print_file("no area can be found from parkhaus")
         return
-    print("found " + str(len(areas)) + " areas from parkhaus")
+    print_file("found " + str(len(areas)) + " areas from parkhaus")
 
     districts = []
 
     for area in areas:
-        print("getting districts in " + area["name"])
+        print_file("getting districts in " + area["name"])
         try:
             this_districts = get_districts(area)
         except Exception as e:
-            print(e)
+            print_file(e)
             log_error("get_districts(" + area["name"] + ")", e)
             continue
-        print("found " + str(len(this_districts)) + " districts in " + area["name"])
+        print_file("found " + str(len(this_districts)) + " districts in " + area["name"])
 
         for district in this_districts:
             districts.append(district)
@@ -432,19 +440,19 @@ def run():
         if DEBUG:
             break
 
-    print("found " + str(len(districts)) + " districts in total")
+    print_file("found " + str(len(districts)) + " districts in total")
 
     carparks = []
 
     for district in districts:
-        print("getting car parks in " + district["name"])
+        print_file("getting car parks in " + district["name"])
         try:
             this_carparks = get_carparks(district)
         except Exception as e:
-            print(e)
+            print_file(e)
             log_error("get_carparks(" + district["name"] + ")", e)
             continue
-        print("found " + str(len(this_carparks)) + " car parks in " + district["name"])
+        print_file("found " + str(len(this_carparks)) + " car parks in " + district["name"])
 
         for carpark in this_carparks:
             carparks.append(carpark)
@@ -452,34 +460,35 @@ def run():
         if DEBUG:
             break
 
-    print("found " + str(len(carparks)) + " car parks in total")
+    print_file("found " + str(len(carparks)) + " car parks in total")
 
-    print("preparing to pull detail from parkhaus")
+    print_file("preparing to pull detail from parkhaus")
     carparks = sort_carparks_by_download_order(carparks, cache_times)
 
     for carpark in carparks:
-        print("getting detail of " + carpark["name"])
+        print_file("getting detail of " + carpark["name"])
         try:
             detail = get_carpark_detail(carpark)
         except Exception as e:
-            print(e)
+            print_file(e)
             log_error("get_carpark_detail(" + carpark["name"] + ")", e)
             continue
         if detail is None:
             continue
         
-        print("uploading " + detail["name"])
+        print_file("uploading " + detail["name"])
         try:
+            detail["name"] = detail["name"].replace("/", "-");    # replace / with - to avoid upload error
             upload_to_FindParking(endpoint_url, detail)
         except Exception as e:
-            print(e)
+            print_file(e)
             log_error("upload_to_FindParking(" + detail["name"] + ")", e)
             continue
 
         details.append(detail)
         finishedCarparkNames[detail["name"]] = True
 
-        print("done " + detail["name"] + ", completed " + str(len(details)) + " of " + str(len(carparks)))
+        print_file("done " + detail["name"] + ", completed " + str(len(details)) + " of " + str(len(carparks)))
 
         if DEBUG:
             break
@@ -488,11 +497,11 @@ def run():
 
     for cache in cache_times:
         if cache["name"] not in finishedCarparkNames:
-            print("deleting " + cache["name"])
+            print_file("deleting " + cache["name"])
             try:
                 delete_cache(delete_endpoint_url, cache["name"])
             except Exception as e:
-                print(e)
+                print_file(e)
                 log_error("delete_cache(" + cache["name"] + ")", e)
                 continue
 
@@ -501,16 +510,11 @@ def run():
     f.close()
 
 def main():
-    while True:
-        try:
-            run()
-        except Exception as e:
-            print(e)
-            log_error("run", e)
-
-        print(datetime.datetime.now())
-        print("sleep 12 hour")
-        time.sleep(12 * 60 * 60) # sleep 12 hour
+    try:
+        run()
+    except Exception as e:
+        print_file(e)
+        log_error("run", e)
 
 if __name__ == "__main__":
     main()
