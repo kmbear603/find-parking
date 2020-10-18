@@ -6,6 +6,7 @@ import json
 import os
 import time
 import datetime
+import dateutil.parser
 import random
 
 DEBUG = False
@@ -313,6 +314,12 @@ def get_carpark_detail(carpark):
             "html": "請到 parkhaus.hk 查看內容",
         })
 
+    modified_meta = dom("meta[property='article:modified_time']")
+    if modified_meta:
+        modified = modified_meta.attr("content")
+    else:
+        modified = "N/A"
+
     return {
         "area": carpark["area"],
         "district": carpark["district"],
@@ -323,7 +330,8 @@ def get_carpark_detail(carpark):
             "latitude": lat,
             "longitude": lng
         },
-        "contents": contents
+        "contents": contents,
+        "modified": modified
     }
 
 def upload_to_FindParking(url, detail):
@@ -476,14 +484,18 @@ def run():
         if detail is None:
             continue
         
-        print_file("uploading " + detail["name"])
-        try:
-            detail["name"] = detail["name"].replace("/", "-");    # replace / with - to avoid upload error
-            upload_to_FindParking(endpoint_url, detail)
-        except Exception as e:
-            print_file(e)
-            log_error("upload_to_FindParking(" + detail["name"] + ")", e)
-            continue
+        cache = cache_times[carpark["name"]]
+        if cache["modified"] == "N/A" or cache["modified"] != detail["modified"]:
+            print_file("uploading " + detail["name"])
+            try:
+                detail["name"] = detail["name"].replace("/", "-");    # replace / with - to avoid upload error
+                upload_to_FindParking(endpoint_url, detail)
+            except Exception as e:
+                print_file(e)
+                log_error("upload_to_FindParking(" + detail["name"] + ")", e)
+                continue
+        else:
+            print_file("no change")
 
         details.append(detail)
         finishedCarparkNames[detail["name"]] = True

@@ -98,7 +98,8 @@ function Parkhaus(carparkDB){
                                 area: carpark.area,
                                 district: carpark.district,
                                 name: carpark.name,
-                                cacheTime: carpark.cacheTime
+                                cacheTime: carpark.cacheTime,
+                                modified: carpark.modified || "N/A"
                             };
 
                             if (!cacheTimeOnly){
@@ -249,6 +250,7 @@ function Parkhaus(carparkDB){
         });
 
         const lastUpdate = detail["lastUpdate"] || "N/A";
+        const modified = detail["modified"] || "N/A";
 
         lookupCarparkDetail(name)
             .then(saveDetail => {
@@ -267,6 +269,7 @@ function Parkhaus(carparkDB){
                 saveDetail["content"] = saveContent;
                 saveDetail["updateTime"] = lastUpdate;
                 saveDetail["cacheTime"] = new Date().getTime();
+                saveDetail["modified"] = modified;
         
                 carparkDB.update(saveDetail)
                     .then(saveDetail => {
