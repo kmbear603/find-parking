@@ -473,6 +473,12 @@ def run():
     print_file("preparing to pull detail from parkhaus")
     carparks = sort_carparks_by_download_order(carparks, cache_times)
 
+    cache_name_to_modified_map = {}
+    for i in range(len(cache_times)):
+        cache = cache_times[i]
+        name = cache["name"]
+        cache_name_to_modified_map[name] = cache["modified"]
+
     for carpark in carparks:
         print_file("getting detail of " + carpark["name"])
         try:
@@ -484,8 +490,11 @@ def run():
         if detail is None:
             continue
         
-        cache = cache_times[carpark["name"]]
-        if cache["modified"] == "N/A" or cache["modified"] != detail["modified"]:
+        if carpark["name"] in cache_name_to_modified_map:
+            cache_modified = cache_name_to_modified_map[carpark["name"]]
+        else:
+            cache_modified = None
+        if cache_modified is None or cache_modified == "N/A" or cache_modified != detail["modified"]:
             print_file("uploading " + detail["name"])
             try:
                 detail["name"] = detail["name"].replace("/", "-");    # replace / with - to avoid upload error

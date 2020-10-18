@@ -13,3 +13,4 @@ scraper/config.json
 scraper/*.html
 scraper/dump-all.json
 scraper/error.log
+scraper/debug.txt
