@@ -288,9 +288,13 @@ function Parkhaus(carparkDB){
                     for (var i = 0; i < CACHE.length; i++){
                         const cache = CACHE[i];
                         if (cache["name"] == carParkName){
-                            CACHE.splice(i, 1);
-                            saveToCacheFile();
-                            break;
+                            carparkDB.remove(carParkName)
+                                .then(() => {
+                                    CACHE.splice(i, 1);
+                                    saveToCacheFile();
+                                    resolve(true);
+                                })
+                            return;
                         }
                     }
                 }
