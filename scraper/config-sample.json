@@ -1,5 +1,7 @@
 {
     "downloadCacheTimeEndpoint": "http://localhost:3000/api/carparks?cacheTimeOnly=true&dist=9999&count=99999",
     "uploadEndpoint": "http://localhost:3000/api/carpark",
-    "deleteEndpoint": "http://localhost:3000/api/carpark"
+    "deleteEndpoint": "http://localhost:3000/api/carpark",
+    "pushoverAppToken": "<APP TOKEN>",
+    "pushoverUserKey": "<USER KEY>"
 }

@@ -14,7 +14,8 @@ DEBUG = False
 def http_post_json(url, json):
     hdrs = {
         "User-Agent": "curl/7.64.0", #"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36",
-        "Connection": "keep-alive",
+        #"Connection": "keep-alive",
+        "Connection": "close",
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
         "accept-encoding": "gzip, deflate, br",
         'Accept-Language': 'en-US,en;q=0.5',
@@ -29,18 +30,19 @@ def http_post_json(url, json):
                 res = session.post(url=url, headers=hdrs, json=json)
                 if res.status_code != 200:
                     raise ValueError("response=" + str(res.status_code))
-            except urllib.request.HTTPError as e:
+            except Exception as e:
                 if trial == 5:
                     raise e
                 else:
+                    throttle()
                     continue
-
             return True
 
 def http_get_text(url):
     hdrs = {
         "User-Agent": "curl/7.64.0", #"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36",
-        "Connection": "keep-alive",
+        #"Connection": "keep-alive",
+        "Connection": "close",
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
         "accept-encoding": "gzip, deflate, br",
         'Accept-Language': 'en-US,en;q=0.5',
@@ -54,10 +56,11 @@ def http_get_text(url):
             try:
                 res = session.get(url=url, headers=hdrs)
                 return res.text
-            except urllib.request.HTTPError as e:
+            except Exception as e:
                 if (trial == 5):
                     raise e
                 else:
+                    throttle()
                     continue
 
 def http_get_dom(url):
@@ -104,6 +107,14 @@ def get_config(config_file_name):
         raise ValueError(config_file_name + " is not a valid json")
 
     return data
+
+def get_pushover_app_token(config_file_name):
+    data = get_config(config_file_name)
+    return data["pushoverAppToken"]
+
+def get_pushover_user_key(config_file_name):
+    data = get_config(config_file_name)
+    return data["pushoverUserKey"]
 
 def get_download_cache_time_endpoint_url(config_file_name):
     data = get_config(config_file_name)
@@ -315,6 +326,9 @@ def get_carpark_detail(carpark):
         })
 
     modified_meta = dom("meta[property='article:modified_time']")
+    if not modified_meta:
+        modified_meta = dom("meta[property='article:published_time']")
+
     if modified_meta:
         modified = modified_meta.attr("content")
     else:
@@ -396,9 +410,33 @@ def print_file(msg):
     with open("debug.txt", "a+", encoding="utf-8") as f:
         f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         f.write(" ")
-        f.write(msg)
+        f.write(str(msg))
         f.write("\n")
         f.close()
+
+def send_pushover_notification(app_token, user_key, title, message):
+    http_post_json("https://api.pushover.net/1/messages.json", {
+        "token": app_token,
+        "user": user_key,
+        "title": title,
+        "message": message
+    })
+
+def notify(app_token, user_key, carparks, title):
+    if len(carparks) == 0:
+        return
+    
+    message = ""
+    count = 0
+    for detail in carparks:
+        message += detail["area"] + "/" + detail["district"] + "/" + detail["name"] + "\n"
+        count += 1
+        if count == 20:
+            message += "and " + str(len(carparks) - count) + " more..."
+            break
+    
+    send_pushover_notification(app_token, user_key, title, message)
+
 
 def run():
     details = []
@@ -408,6 +446,9 @@ def run():
     cache_time_endpoint_url = get_download_cache_time_endpoint_url("config.json")
     endpoint_url = get_upload_endpoint_url("config.json")
     delete_endpoint_url = get_delete_endpoint_url("config.json")
+
+    app_token = get_pushover_app_token("config.json")
+    user_key = get_pushover_user_key("config.json")
 
     print_file("getting cache status")
     try:
@@ -479,12 +520,16 @@ def run():
         name = cache["name"]
         cache_name_to_modified_map[name] = cache["modified"]
 
+    updated = []
+    failed = []
+
     for carpark in carparks:
         print_file("getting detail of " + carpark["name"])
         try:
             detail = get_carpark_detail(carpark)
         except Exception as e:
             print_file(e)
+            failed.append({ "name": carpark["name"], "error": e })
             log_error("get_carpark_detail(" + carpark["name"] + ")", e)
             continue
         if detail is None:
@@ -499,6 +544,7 @@ def run():
             try:
                 detail["name"] = detail["name"].replace("/", "-");    # replace / with - to avoid upload error
                 upload_to_FindParking(endpoint_url, detail)
+                updated.append(detail)
             except Exception as e:
                 print_file(e)
                 log_error("upload_to_FindParking(" + detail["name"] + ")", e)
@@ -529,6 +575,9 @@ def run():
     f = open("dump-all.json", "w", encoding="utf-8")
     json.dump(details, f, ensure_ascii=False)
     f.close()
+
+    notify(app_token, user_key, updated, "FindParking: Updated " + str(len(updated)) + " of " + str(len(details)))
+    notify(app_token, user_key, failed, "FindParking: Failed " + str(len(failed)))
 
 def main():
     try:
